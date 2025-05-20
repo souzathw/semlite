@@ -1,8 +1,9 @@
 library(reticulate)
-sem <- import_from_path("moderation", path = "caminho_da_pasta_semlite")
+use_python("/home/th/.cache/R/reticulate/uv/cache/archive-v0/2ZFEmkvCeQxZ308ijiMFV/bin/python3", required = TRUE)
+sem <- import_from_path("moderation", path = "/home/th/Desktop/semlite/semlite")
 
 result <- sem$run_moderation(
-  data_path = "caminho_do_csv",
+  data_path = "/home/th/Desktop/semlite/data/teste_moderacao.csv",
   iv = "DF",
   dv = "FP",
   moderator = "CR",
@@ -14,12 +15,11 @@ result <- sem$run_moderation(
   )
 )
 
-cat(" Modelo SEM com moderação construído:\n")
+cat("Modelo SEM com moderação construído:\n")
 cat(result$model_description, "\n\n")
 
-cat(" Estimativas dos parâmetros:\n")
+cat("Estimativas dos parâmetros:\n")
 print(result$estimates)
 
 cat("\n Métricas de Ajuste:\n")
 print(result$fit_stats)
-

@@ -15,14 +15,12 @@ def run_cfa(data_path, factor_name, indicators):
         model.fit(df)
 
         estimates = model.inspect(std_est=True)
-        stats = model.calc_stats()
 
         print_sucesso("CFA")
 
         return {
             "model_description": model_desc,
-            "estimates": estimates,
-            "fit_stats": stats
+            "estimates": estimates
         }
 
     except Exception as e:
