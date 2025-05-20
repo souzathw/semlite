@@ -15,3 +15,6 @@ print(result$estimates)
 
 cat("\n Métricas de Ajuste:\n")
 print(result$fit_stats)
+
+
+

@@ -26,6 +26,18 @@ O foco principal é permitir que **pesquisadores da Psicologia, Educação e Ci�
 
 ### 📦 Instalação
 
+Notas->
+
+ Caso dê o erro:
+
+Error in py_module_import(module, convert = convert) : 
+  ModuleNotFoundError: No module named 'semopy'
+Run `reticulate::py_last_error()` for details.
+
+Esse comando deve ser rodado no console do R: 
+py_install(c("semopy", "pandas", "statsmodels"))
+
+
 #### Python (instale o pacote localmente)
 
 ```bash
