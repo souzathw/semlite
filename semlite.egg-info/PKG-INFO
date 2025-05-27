@@ -1,0 +1,62 @@
+Metadata-Version: 2.1
+Name: semlite
+Version: 0.1
+Summary: Pacote simplificado para análise de equações estruturais (MEE) ou SEM, com foco em mediação e moderação acessível via R
+Home-page: UNKNOWN
+Author: PontesTI
+License: UNKNOWN
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: Intended Audience :: Education
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+
+# 📊 SEMLITE — Modelagem de Equações Estruturais Descomplicada
+
+[![Python](https://img.shields.io/badge/Python-3.8%2B-blue?logo=python)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![R Compatible](https://img.shields.io/badge/R-Compatible-success?logo=r)](https://cran.r-project.org/)
+[![Status](https://img.shields.io/badge/status-Beta-yellow)]()
+
+---
+
+### 🎯 O que é o SEMLITE?
+
+SEMLITE é um pacote Python criado para **facilitar análises de Modelagem de Equações Estruturais (MEE)** — como **mediação**, **moderação** e **análise fatorial confirmatória (CFA)** — de maneira simples e intuitiva.  
+O foco principal é permitir que **pesquisadores da Psicologia, Educação e Ciências Humanas** usem essas análises **diretamente do R**, sem precisar escrever código complexo.
+
+---
+
+### 🧰 Funcionalidades
+
+- ✅ **run_cfa()** – análise fatorial confirmatória
+- ✅ **run_mediation()** – modelagem com variável mediadora
+- ✅ **run_moderation()** – modelagem com variável moderadora (interação média ou item-a-item)
+- ✅ **Mensagens amigáveis** para quem está começando
+- ✅ **Pronto para ser usado no R Studio** com o pacote `reticulate`
+
+---
+
+### 📦 Instalação
+
+Notas->
+
+ Caso dê o erro:
+
+Error in py_module_import(module, convert = convert) : 
+  ModuleNotFoundError: No module named 'semopy'
+Run `reticulate::py_last_error()` for details.
+
+Esse comando deve ser rodado no console do R: 
+py_install(c("semopy", "pandas", "statsmodels"))
+
+
+#### Python (instale o pacote localmente)
+
+```bash
+git clone https://github.com/souzathw/semlite.git
+cd semlite
+pip install .
+
+

@@ -24,9 +24,6 @@ def carregar_csv_robusto(path):
             dialect = csv.Sniffer().sniff(amostra)
             f.seek(0)
             df = pd.read_csv(f, delimiter=dialect.delimiter)
-
-        df.columns = df.columns.str.strip()  # 🔥 Essencial — remove espaços invisíveis
         return df
-
     except Exception as e:
         raise ValueError(f"❌ Erro ao carregar o CSV: {e}")
