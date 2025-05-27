@@ -1,5 +1,4 @@
 library(reticulate)
-py_uninstall("semlite", pip = TRUE)
 py_install("git+https://github.com/souzathw/semlite.git")
 sem <- import("semlite.moderation")
 
