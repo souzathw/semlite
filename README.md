@@ -7,48 +7,61 @@
 
 ---
 
-### 🎯 O que é o SEMLITE?
+## 🎯 O que é o SEMLITE?
 
-SEMLITE é um pacote Python criado para **facilitar análises de Modelagem de Equações Estruturais (MEE)** — como **mediação**, **moderação** e **análise fatorial confirmatória (CFA)** — de maneira simples e intuitiva.  
+**SEMLITE** é um pacote Python criado para **facilitar análises de Modelagem de Equações Estruturais (MEE)** — como **mediação**, **moderação** e **análise fatorial confirmatória (CFA)** — de maneira simples e intuitiva.
+
 O foco principal é permitir que **pesquisadores da Psicologia, Educação e Ciências Humanas** usem essas análises **diretamente do R**, sem precisar escrever código complexo.
 
 ---
 
-### 🧰 Funcionalidades
+## 🧰 Funcionalidades
 
-- ✅ **run_cfa()** – análise fatorial confirmatória
-- ✅ **run_mediation()** – modelagem com variável mediadora
-- ✅ **run_moderation()** – modelagem com variável moderadora (interação média ou item-a-item)
-- ✅ **Mensagens amigáveis** para quem está começando
-- ✅ **Pronto para ser usado no R Studio** com o pacote `reticulate`
+- ✅ `run_cfa()` – análise fatorial confirmatória
+- ✅ `run_mediation()` – modelagem com variável mediadora
+- ✅ `run_moderation()` – modelagem com variável moderadora (interação média ou item-a-item)
+- ✅ Mensagens amigáveis para quem está começando
+- ✅ Pronto para ser usado no **RStudio** com o pacote [`reticulate`](https://rstudio.github.io/reticulate/)
 
 ---
 
-### 📦 Instalação
+## 📦 Instalação
 
-#### Intalacao no R 
-- Importante já ter o python instalado
+### 🔹 Instalação no **R**
 
-1 -  No console do R, baixar o pacote reticulate
+> ⚠️ É necessário já ter o **Python** instalado no seu sistema.
+
+1️⃣ No console do R, instale o pacote `reticulate`:
+
+```r
 install.packages("reticulate")
+```
 
-2 -  Em seguida executar as importações necessárias: 
+2️⃣ Em seguida, execute as importações necessárias:
+
+```r
 library(reticulate)
+
 py_install("git+https://github.com/souzathw/semlite.git")
 sem <- import("semlite.moderation")
+```
 
-3 - Após, selecionar o csv desejado:
+3️⃣ Carregue seu arquivo CSV:
+
+```r
 caminho_csv <- file.choose()
-df <- read.csv(caminho_csv, sep = ",")  
+df <- read.csv(caminho_csv, sep = ",")
+```
 
-4 - Em seguida, editar os moderadores e os itens como o exemplo abaixo:
+4️⃣ Rode o modelo de moderação (edite as variáveis conforme seu banco de dados):
 
+```r
 result <- sem$run_moderation(
   data_path = caminho_csv,
   iv = "SAUFAM",
   dv = "CULPA",
   moderator = "SSF",
-  interaction_type = "mean",  
+  interaction_type = "mean",  # ou "product" para interação produto
   indicators = dict(
     SAUFAM = c("SAUFAM1", "SAUFAM2", "SAUFAM3", "SAUFAM4", "SAUFAM5"),
     SSF = c("SSF1", "SSF2", "SSF3", "SSF4"),
@@ -57,16 +70,25 @@ result <- sem$run_moderation(
   )
 )
 
-cat(" Modelo de Moderação construído:\n")
+cat("Modelo de Moderação construído:\n")
 cat(result$model_description, "\n\n")
 
-cat(" Estimativas dos parâmetros:\n")
+cat("Estimativas dos parâmetros:\n")
 print(result$estimates)
+```
 
+---
 
-#### Python (instale o pacote localmente)
+### 🔹 Instalação no **Python** (localmente)
 
 ```bash
 git clone https://github.com/souzathw/semlite.git
 cd semlite
 pip install .
+```
+
+---
+
+## 🧠 Licença
+
+Este projeto está licenciado sob a licença MIT — veja o arquivo [LICENSE](LICENSE) para detalhes.
