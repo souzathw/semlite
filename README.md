@@ -26,16 +26,42 @@ O foco principal é permitir que **pesquisadores da Psicologia, Educação e Ci�
 
 ### 📦 Instalação
 
-Notas->
+#### Intalacao no R 
+- Importante já ter o python instalado
 
- Caso dê o erro:
+1 -  No console do R, baixar o pacote reticulate
+install.packages("reticulate")
 
-Error in py_module_import(module, convert = convert) : 
-  ModuleNotFoundError: No module named 'semopy'
-Run `reticulate::py_last_error()` for details.
+2 -  Em seguida executar as importações necessárias: 
+library(reticulate)
+py_install("git+https://github.com/souzathw/semlite.git")
+sem <- import("semlite.moderation")
 
-Esse comando deve ser rodado no console do R: 
-py_install(c("semopy", "pandas", "statsmodels"))
+3 - Após, selecionar o csv desejado:
+caminho_csv <- file.choose()
+df <- read.csv(caminho_csv, sep = ",")  
+
+4 - Em seguida, editar os moderadores e os itens como o exemplo abaixo:
+
+result <- sem$run_moderation(
+  data_path = caminho_csv,
+  iv = "SAUFAM",
+  dv = "CULPA",
+  moderator = "SSF",
+  interaction_type = "mean",  
+  indicators = dict(
+    SAUFAM = c("SAUFAM1", "SAUFAM2", "SAUFAM3", "SAUFAM4", "SAUFAM5"),
+    SSF = c("SSF1", "SSF2", "SSF3", "SSF4"),
+    CULPA = c("CULPA1", "CULPA2", "CULPA3", "CULPA4", "CULPA5",
+              "CULPA6", "CULPA7", "CULPA8", "CULPA9", "CULPA10")
+  )
+)
+
+cat(" Modelo de Moderação construído:\n")
+cat(result$model_description, "\n\n")
+
+cat(" Estimativas dos parâmetros:\n")
+print(result$estimates)
 
 
 #### Python (instale o pacote localmente)
