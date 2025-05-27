@@ -1,6 +1,6 @@
+import os
 import pandas as pd
 import csv
-import os
 
 def validar_csv(path):
     if not os.path.exists(path):
@@ -20,13 +20,11 @@ def print_sucesso(modelo="Modelo"):
 def carregar_csv_robusto(path):
     try:
         with open(path, 'r', encoding='utf-8') as f:
-            amostra = f.read(2048)
-            dialect = csv.Sniffer().sniff(amostra)
+            sample = f.read(2048)
+            dialect = csv.Sniffer().sniff(sample)
             f.seek(0)
             df = pd.read_csv(f, delimiter=dialect.delimiter)
-
-        df.columns = df.columns.str.strip()  # 🔥 Essencial — remove espaços invisíveis
+        df.columns = df.columns.str.strip() 
         return df
-
     except Exception as e:
         raise ValueError(f"❌ Erro ao carregar o CSV: {e}")
