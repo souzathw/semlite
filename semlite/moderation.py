@@ -13,8 +13,12 @@ def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indica
             model_desc += f"{factor} =~ " + " + ".join(items) + "\n"
 
         if interaction_type == 'mean':
-            df['interaction'] = df[indicators[iv]].mean(axis=1) * df[indicators[moderator]].mean(axis=1)
-            model_desc += f"{dv} ~ {iv} + {moderator} + interaction"
+            df['IV_mean'] = df[indicators[iv]].mean(axis=1)
+            df['MOD_mean'] = df[indicators[moderator]].mean(axis=1)
+            df['interaction'] = df['IV_mean'] * df['MOD_mean']
+
+            model_desc += f"{dv} ~ {iv} + {moderator} + interaction\n"
+
         elif interaction_type == 'product':
             interaction_vars = []
             for x in indicators[iv]:
@@ -26,8 +30,8 @@ def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indica
             interaction_factor = f"{iv}_x_{moderator}"
 
             model_desc += f"{interaction_factor} =~ " + " + ".join(interaction_vars) + "\n"
-
             model_desc += f"{dv} ~ {iv} + {moderator} + {interaction_factor}"
+
         else:
             raise ValueError("❌ O parâmetro 'interaction_type' deve ser 'mean' ou 'product'.")
 
