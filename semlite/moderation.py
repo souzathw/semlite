@@ -1,7 +1,7 @@
-from semopy import ModelMeans
 from semlite.utils import validar_csv, validar_variaveis, print_sucesso, carregar_csv_robusto
+from semlite.r_helpers import run_lavaan_sem
 
-def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indicators=None):
+def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indicators=None, estimator="WLSMV"):
     try:
         validar_csv(data_path)
         df = carregar_csv_robusto(data_path)
@@ -16,25 +16,29 @@ def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indica
             df['interaction'] = df[indicators[iv]].mean(axis=1) * df[indicators[moderator]].mean(axis=1)
             model_desc += f"{dv} ~ {iv} + {moderator} + interaction"
         elif interaction_type == 'product':
+            interaction_vars = []
             for x in indicators[iv]:
                 for z in indicators[moderator]:
                     col_name = f"{x}_{z}"
                     df[col_name] = df[x] * df[z]
-            interaction_vars = [f"{x}_{z}" for x in indicators[iv] for z in indicators[moderator]]
-            model_desc += "Interaction =~ " + " + ".join(interaction_vars) + "\n"
-            model_desc += f"{dv} ~ {iv} + {moderator} + Interaction"
+                    interaction_vars.append(col_name)
+
+            interaction_factor = f"{iv}_x_{moderator}"
+
+            model_desc += f"{interaction_factor} =~ " + " + ".join(interaction_vars) + "\n"
+
+            model_desc += f"{dv} ~ {iv} + {moderator} + {interaction_factor}"
         else:
             raise ValueError("❌ O parâmetro 'interaction_type' deve ser 'mean' ou 'product'.")
 
-        model = ModelMeans(model_desc)
-        model.fit(df)
+        indices, estimates_df = run_lavaan_sem(model_desc, df, estimator=estimator)
 
-        estimates = model.inspect(std_est=True)
-        print_sucesso("Moderação")
+        print_sucesso("Moderação (via lavaan)")
 
         return {
             "model_description": model_desc,
-            "estimates": estimates
+            "fit_indices": indices,
+            "estimates": estimates_df.to_dict(orient='records')
         }
 
     except Exception as e:
