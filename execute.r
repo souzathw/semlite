@@ -1,5 +1,6 @@
 library(reticulate)
 py_install("git+https://github.com/souzathw/semlite.git")
+install.packages("lavaan")
 sem <- import("semlite.moderation")
 
 
@@ -12,7 +13,7 @@ result <- sem$run_moderation(
   iv = "SAUFAM",
   dv = "CULPA",
   moderator = "SSF",
-  interaction_type = "product",  #ou "mean"
+  interaction_type = "mean",  
   indicators = dict(
     SAUFAM = c("SAUFAM1", "SAUFAM2", "SAUFAM3", "SAUFAM4", "SAUFAM5"),
     SSF = c("SSF1", "SSF2", "SSF3", "SSF4"),
@@ -20,9 +21,14 @@ result <- sem$run_moderation(
               "CULPA6", "CULPA7", "CULPA8", "CULPA9", "CULPA10")
   )
 )
-
 cat("📌 Modelo de Moderação construído:\n")
 cat(result$model_description, "\n\n")
 
-cat("📊 Estimativas dos parâmetros:\n")
+cat("📏 Índices de ajuste:\n")
+print(result$fit_indices)
+
+cat("\n📊 Estimativas dos parâmetros:\n")
 print(result$estimates)
+regs <- Filter(function(x) x$op == "~", result$estimates)
+print(regs)
+
