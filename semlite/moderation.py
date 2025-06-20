@@ -5,6 +5,7 @@ def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indica
     try:
         validar_csv(data_path)
         df = carregar_csv_robusto(data_path)
+
         for itens in indicators.values():
             validar_variaveis(df, itens)
 
@@ -16,7 +17,6 @@ def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indica
             df['IV_mean'] = df[indicators[iv]].mean(axis=1)
             df['MOD_mean'] = df[indicators[moderator]].mean(axis=1)
             df['interaction'] = df['IV_mean'] * df['MOD_mean']
-
             model_desc += f"{dv} ~ {iv} + {moderator} + interaction\n"
 
         elif interaction_type == 'product':
@@ -28,21 +28,28 @@ def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indica
                     interaction_vars.append(col_name)
 
             interaction_factor = f"{iv}_x_{moderator}"
-
             model_desc += f"{interaction_factor} =~ " + " + ".join(interaction_vars) + "\n"
-            model_desc += f"{dv} ~ {iv} + {moderator} + {interaction_factor}"
+            model_desc += f"{dv} ~ {iv} + {moderator} + {interaction_factor}\n"
 
         else:
             raise ValueError("❌ O parâmetro 'interaction_type' deve ser 'mean' ou 'product'.")
 
-        indices, estimates_df = run_lavaan_sem(model_desc, df, estimator=estimator)
+        ordered_vars = indicators.get(dv, None)
+
+        lavaan_result = run_lavaan_sem(
+            model_desc=model_desc,
+            df=df,
+            estimator=estimator,
+            ordered_vars=ordered_vars
+        )
 
         print_sucesso("Moderação (via lavaan)")
 
         return {
             "model_description": model_desc,
-            "fit_indices": indices,
-            "estimates": estimates_df.to_dict(orient='records')
+            "fit_indices": lavaan_result["indices"],
+            "estimates": lavaan_result["estimates"].to_dict(orient='records'),
+            "summary": "\n".join(lavaan_result["summary"])
         }
 
     except Exception as e:
