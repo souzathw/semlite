@@ -4,11 +4,12 @@ from semlite.r_helpers import run_lavaan_sem
 def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indicators=None, estimator="WLSMV"):
     try:
         validar_csv(data_path)
-        df = carregar_arquivo_robusto(data_path)
-
-        for itens in indicators.values():
-            validar_variaveis(df, itens)
-
+        expected_columns = sum(indicators.values(), []) 
+        df, temp_csv_path = carregar_arquivo_robusto(
+            data_path,
+            colunas_esperadas=expected_columns,
+            exportar_csv_limpo=True
+        )
         model_desc = ""
         for factor, items in indicators.items():
             model_desc += f"{factor} =~ " + " + ".join(items) + "\n"
@@ -43,6 +44,7 @@ def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indica
             ordered_vars=ordered_vars
         )
 
+        print(f"🧼 CSV limpo utilizado: {temp_csv_path}")
         print_sucesso("Moderação (via lavaan)")
 
         return {
