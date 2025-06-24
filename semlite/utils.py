@@ -18,9 +18,9 @@ def carregar_csv_robusto(path):
         for enc in ('utf-8', 'latin1', 'utf-16'):
             try:
                 with open(path, encoding=enc) as f:
-                    sample = f.read(2048); f.seek(0)
-                    dialect = csv.Sniffer().sniff(sample)
-                    df = pd.read_csv(f, delimiter=dialect.delimiter)
+                    samp = f.read(2048); f.seek(0)
+                    delim = csv.Sniffer().sniff(samp).delimiter
+                    df = pd.read_csv(f, delimiter=delim)
                 break
             except Exception:
                 continue
@@ -29,7 +29,10 @@ def carregar_csv_robusto(path):
     else:
         df = pd.read_excel(path)
     df.columns = df.columns.str.strip()
-    df = df.apply(lambda c: c.str.strip() if c.dtype == object else c)
+    # strip em strings
+    for col in df.select_dtypes(include="object"):
+        df[col] = df[col].str.strip()
+    # força numérico
     df = df.apply(pd.to_numeric, errors='coerce')
     df.dropna(inplace=True)
     return df

@@ -15,7 +15,7 @@ def run_lavaan_sem(model_desc: str, csv_path: str, estimator: str = "WLSMV", ord
     ro.r(f'fit <- sem(model_desc, data=df, estimator="{estimator}")')
     ro.r('indices <- fitMeasures(fit)')
     ro.r('estimates <- parameterEstimates(fit, standardized=TRUE)')
-    ro.r('summary_txt <- capture.output(summary(fit, fit.measures=TRUE))')
+    ro.r('summary_txt <- capture.output(summary(fit, fit.measures=TRUE, standardized=TRUE))')
     indices = dict(zip(ro.r('names(indices)'), list(ro.r('indices'))))
     estimates_df = pandas2ri.rpy2py(ro.r('estimates'))
     summary_list = list(ro.r('summary_txt'))

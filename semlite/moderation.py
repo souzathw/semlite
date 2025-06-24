@@ -1,11 +1,14 @@
-from semlite.utils import validar_csv, validar_variaveis, carregar_csv_robusto, print_sucesso
+from semlite.utils import validar_csv, validar_variaveis, carregar_csv_robusto
 from semlite.r_helpers import run_lavaan_sem
 
-def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indicators=None, estimator="WLSMV"):
+def run_moderation(data_path, iv, dv, moderator,
+                   interaction_type='mean', indicators=None,
+                   estimator="WLSMV"):
     try:
+
         validar_csv(data_path)
         df = carregar_csv_robusto(data_path)
-
+        
         for items in indicators.values():
             validar_variaveis(df, items)
 
@@ -19,24 +22,23 @@ def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indica
             df['interaction'] = df['IV_mean'] * df['MOD_mean']
             model_desc += f"{dv} ~ {iv} + {moderator} + interaction\n"
         else:  
-            interaction_cols = []
+            inter_cols = []
             for x in indicators[iv]:
                 for z in indicators[moderator]:
                     col = f"{x}_{z}"
                     df[col] = df[x] * df[z]
-                    interaction_cols.append(col)
+                    inter_cols.append(col)
             factor_name = f"{iv}_x_{moderator}"
-            model_desc += f"{factor_name} =~ " + " + ".join(interaction_cols) + "\n"
+            model_desc += f"{factor_name} =~ " + " + ".join(inter_cols) + "\n"
             model_desc += f"{dv} ~ {iv} + {moderator} + {factor_name}\n"
+
         csv_clean = "temp_clean.csv"
         df.to_csv(csv_clean, index=False)
+
         ordered = indicators.get(dv)
         res = run_lavaan_sem(model_desc, csv_clean, estimator=estimator, ordered_vars=ordered)
-
-        print_sucesso("Moderação (via lavaan)")
         estimates = res["estimates"]
-        if hasattr(estimates, "to_dict"):
-            estimates = estimates.to_dict(orient="records")
+        estimates = estimates.to_dict(orient="records")
 
         return {
             "model_description": model_desc,
