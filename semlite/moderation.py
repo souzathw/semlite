@@ -1,10 +1,10 @@
-from semlite.utils import validar_csv, validar_variaveis, print_sucesso, carregar_csv_robusto
+from semlite.utils import validar_csv, validar_variaveis, print_sucesso, carregar_arquivo_robusto
 from semlite.r_helpers import run_lavaan_sem
 
 def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indicators=None, estimator="WLSMV"):
     try:
         validar_csv(data_path)
-        df = carregar_csv_robusto(data_path)
+        df = carregar_arquivo_robusto(data_path)
 
         for itens in indicators.values():
             validar_variaveis(df, itens)
