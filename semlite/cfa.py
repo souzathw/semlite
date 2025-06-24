@@ -1,10 +1,10 @@
 from semopy import ModelMeans
-from semlite.utils import validar_csv, validar_variaveis, print_sucesso, carregar_csv_robusto
+from semlite.utils import validar_csv, validar_variaveis, print_sucesso, carregar_arquivo_robusto
 
 def run_cfa(data_path, factor_name, indicators):
     try:
         validar_csv(data_path)
-        df = carregar_csv_robusto(data_path)
+        df = carregar_arquivo_robusto(data_path)
         validar_variaveis(df, indicators)
 
         model_desc = f"{factor_name} =~ " + " + ".join(indicators)
