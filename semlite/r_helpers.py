@@ -1,64 +1,46 @@
-from semlite.utils import validar_csv, validar_variaveis, print_sucesso, carregar_arquivo_robusto
-from semlite.r_helpers import run_lavaan_sem
+import rpy2.robjects as ro
+from rpy2.robjects import pandas2ri
+from rpy2.robjects.conversion import localconverter
+from rpy2.robjects import default_converter
+from rpy2.robjects.pandas2ri import py2rpy, rpy2py_dataframe
 
-def run_moderation(data_path, iv, dv, moderator, interaction_type='product', indicators=None, estimator="ML"):
-    try:
-        validar_csv(data_path)
+ro.r('library(lavaan)')
 
-        expected_columns = sum(indicators.values(), [])
-        df = carregar_arquivo_robusto(
-            data_path,
-            colunas_esperadas=expected_columns,
-            exportar_csv_limpo=False
-        )[0]
+def run_lavaan_sem(model_desc, csv_path, estimator="WLSMV", ordered_vars=None):
+    df = pandas2ri.read_csv(csv_path)
 
-        model_desc = ""
+    with localconverter(default_converter + pandas2ri.converter):
+        r_df = py2rpy(df)
 
-        for factor, items in indicators.items():
-            model_desc += f"{factor} =~ " + " + ".join(items) + "\n"
+    ro.globalenv['dados1'] = r_df
+    ro.globalenv['modelo'] = model_desc
 
-        if interaction_type == 'mean':
-            df['IV_mean'] = df[indicators[iv]].mean(axis=1)
-            df['MOD_mean'] = df[indicators[moderator]].mean(axis=1)
-            df['interaction'] = df['IV_mean'] * df['MOD_mean']
-            model_desc += f"{dv} ~ {iv} + {moderator} + interaction\n"
+    ro.r('dados1 <- na.omit(dados1)')
 
-        elif interaction_type == 'product':
-            interaction_vars = []
-            for x in indicators[iv]:
-                for z in indicators[moderator]:
-                    col_name = f"{x}_{z}"
-                    df[col_name] = df[x] * df[z]
-                    interaction_vars.append(col_name)
+    if ordered_vars is not None:
+        ro.globalenv['ordered_vars'] = ro.StrVector(ordered_vars)
+        ro.r(f'''
+        fit <- sem(model=modelo, data=dados1, ordered=ordered_vars, estimator="{estimator}")
+        ''')
+    else:
+        ro.r(f'''
+        fit <- sem(model=modelo, data=dados1, estimator="{estimator}")
+        ''')
 
-            interaction_factor = f"{iv}_x_{moderator}"
-            model_desc += f"{interaction_factor} =~ " + " + ".join(interaction_vars) + "\n"
-            model_desc += f"{dv} ~ {iv} + {moderator} + {interaction_factor}\n"
+    ro.r('''
+    indices <- fitMeasures(fit, c("chisq", "df", "cfi", "tli", "rmsea", "rmsea.ci.lower", "rmsea.ci.upper", "srmr"))
+    estimates <- parameterEstimates(fit, standardized=TRUE)
+    resumo <- capture.output(summary(fit, standardized=TRUE))
+    ''')
 
-        else:
-            raise ValueError("❌ O parâmetro 'interaction_type' deve ser 'mean' ou 'product'.")
+    indices = dict(zip(ro.r('names(indices)'), list(ro.r('indices'))))
 
-        temp_csv_path = "temp_clean.csv"
-        df.to_csv(temp_csv_path, index=False)
+    with localconverter(default_converter + pandas2ri.converter):
+        estimates_df = rpy2py_dataframe(ro.r('estimates'))
+        resumo = list(ro.r('resumo'))
 
-        ordered_vars = indicators.get(dv, None)
-        lavaan_result = run_lavaan_sem(
-            model_desc=model_desc,
-            csv_path=temp_csv_path,
-            estimator=estimator,
-            ordered_vars=ordered_vars
-        )
-
-        print(f"🧼 CSV limpo utilizado: {temp_csv_path}")
-        print_sucesso("Moderação (via lavaan)")
-
-        return {
-            "model_description": model_desc,
-            "fit_indices": lavaan_result["indices"],
-            "estimates": lavaan_result["estimates"].to_dict(orient='records'),
-            "summary": "\n".join(lavaan_result["summary"])
-        }
-
-    except Exception as e:
-        print(f"❌ Erro ao rodar a moderação: {e}")
-        return None
+    return {
+        "indices": indices,
+        "estimates": estimates_df,
+        "summary": resumo
+    }

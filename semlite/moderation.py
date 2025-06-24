@@ -5,11 +5,11 @@ def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indica
     try:
         validar_csv(data_path)
 
-        expected_columns = sum(indicators.values(), [])  # lista achatada
+        expected_columns = sum(indicators.values(), [])
         df, _ = carregar_arquivo_robusto(
             data_path,
             colunas_esperadas=expected_columns,
-            exportar_csv_limpo=False  # ← não salva ainda
+            exportar_csv_limpo=False
         )
 
         model_desc = ""
@@ -37,7 +37,6 @@ def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indica
         else:
             raise ValueError("❌ O parâmetro 'interaction_type' deve ser 'mean' ou 'product'.")
 
-        # Salvar CSV final com colunas de interação
         temp_csv_path = "temp_clean.csv"
         df.to_csv(temp_csv_path, index=False)
 
@@ -53,10 +52,14 @@ def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indica
         print(f"🧼 CSV limpo utilizado: {temp_csv_path}")
         print_sucesso("Moderação (via lavaan)")
 
+        estimates = lavaan_result["estimates"]
+        if hasattr(estimates, "to_dict"):
+            estimates = estimates.to_dict(orient='records')
+
         return {
             "model_description": model_desc,
             "fit_indices": lavaan_result["indices"],
-            "estimates": lavaan_result["estimates"].to_dict(orient='records'),
+            "estimates": estimates,
             "summary": "\n".join(lavaan_result["summary"])
         }
 

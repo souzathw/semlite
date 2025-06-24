@@ -42,10 +42,8 @@ def carregar_arquivo_robusto(path, colunas_esperadas=None, exportar_csv_limpo=Tr
         else:
             raise ValueError("❌ Formato de arquivo não suportado. Use .csv ou .xlsx.")
 
-
         df.columns = df.columns.str.strip()
         df = df.apply(lambda col: col.map(lambda x: x.strip() if isinstance(x, str) else x))
-
 
         df = df.apply(pd.to_numeric, errors='coerce')
         df.dropna(inplace=True)
@@ -53,13 +51,12 @@ def carregar_arquivo_robusto(path, colunas_esperadas=None, exportar_csv_limpo=Tr
         if colunas_esperadas:
             validar_variaveis(df, colunas_esperadas)
 
-
         if exportar_csv_limpo:
             temp_path = "temp_clean.csv"
             df.to_csv(temp_path, index=False)
             return df, temp_path
         else:
-            return df, None   
+            return df, None
 
     except Exception as e:
         raise ValueError(f"❌ Erro ao carregar o arquivo: {e}")
