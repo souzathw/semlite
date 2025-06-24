@@ -1,20 +1,18 @@
 import rpy2.robjects as ro
-from rpy2.robjects import pandas2ri
-from rpy2.robjects.conversion import localconverter
-from rpy2.robjects import default_converter
-from rpy2.robjects.pandas2ri import py2rpy, rpy2py
+from rpy2.robjects.vectors import StrVector
 
-ro.r('library(lavaan)')
+def run_lavaan_sem(model_desc, df=None, csv_path="temp_clean.csv", estimator="WLSMV", ordered_vars=None):
+    ro.r('library(lavaan)')
+    ro.r.assign("modelo", model_desc)
+    if not csv_path or not csv_path.endswith(".csv"):
+        raise ValueError("❌ Caminho para CSV limpo inválido ou ausente.")
 
-def run_lavaan_sem(model_desc, df, estimator="WLSMV", ordered_vars=None):
-    with localconverter(default_converter + pandas2ri.converter):
-        r_df = py2rpy(df)
-
-    ro.globalenv['dados1'] = r_df
-    ro.globalenv['modelo'] = model_desc
+    ro.r.assign("caminho_csv", csv_path)
+    ro.r('dados1 <- read.csv(caminho_csv, stringsAsFactors = FALSE)')
+    ro.r('dados1 <- na.omit(dados1)')
 
     if ordered_vars is not None:
-        ro.globalenv['ordered_vars'] = ro.StrVector(ordered_vars)
+        ro.globalenv['ordered_vars'] = StrVector(ordered_vars)
         ro.r(f'''
         fit <- sem(model=modelo, data=dados1, ordered=ordered_vars, estimator="{estimator}")
         ''')
@@ -23,6 +21,10 @@ def run_lavaan_sem(model_desc, df, estimator="WLSMV", ordered_vars=None):
         fit <- sem(model=modelo, data=dados1, estimator="{estimator}")
         ''')
 
+    converged = bool(ro.r('lavInspect(fit, "converged")')[0])
+    if not converged:
+        raise RuntimeError("❌ lavaan->lav_fit_measures(): fit measures not available if model did not converge")
+
     ro.r('''
     indices <- fitMeasures(fit, c("chisq", "df", "cfi", "tli", "rmsea", "rmsea.ci.lower", "rmsea.ci.upper", "srmr"))
     estimates <- parameterEstimates(fit, standardized=TRUE)
@@ -30,15 +32,11 @@ def run_lavaan_sem(model_desc, df, estimator="WLSMV", ordered_vars=None):
     ''')
 
     indices = dict(zip(ro.r('names(indices)'), list(ro.r('indices'))))
-    estimates_r = ro.r('estimates')
-    resumo_r = ro.r('resumo')
-
-    with localconverter(default_converter + pandas2ri.converter):
-        estimates_df = rpy2py(estimates_r)
-        resumo = list(resumo_r)
+    estimates_df = ro.conversion.rpy2py(ro.r('estimates'))
+    resumo_list = list(ro.r('resumo'))
 
     return {
         "indices": indices,
         "estimates": estimates_df,
-        "summary": resumo
+        "summary": resumo_list
     }
