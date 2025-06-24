@@ -17,10 +17,9 @@ def print_sucesso(modelo="Modelo"):
     print(f"✅ {modelo} ajustado com sucesso.")
     print("📊 Resultados prontos para análise.")
 
-def carregar_arquivo_robusto(path):
+def carregar_arquivo_robusto(path, colunas_esperadas=None, exportar_csv_limpo=True):
     try:
         if path.endswith('.csv'):
-            # Tentativa de detectar encoding com fallback
             encodings = ['utf-8', 'latin1', 'utf-16']
             for enc in encodings:
                 try:
@@ -43,19 +42,20 @@ def carregar_arquivo_robusto(path):
         else:
             raise ValueError("❌ Formato de arquivo não suportado. Use .csv ou .xlsx.")
 
-        # Limpar colunas e dados
         df.columns = df.columns.str.strip()
         df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
 
-        # Forçar conversão numérica e avisar se falhar
-        for col in df.columns:
-            try:
-                df[col] = pd.to_numeric(df[col], errors='coerce')
-            except Exception as e:
-                print(f"⚠️ Aviso: Coluna '{col}' não pôde ser convertida para numérico.")
+        df = df.apply(pd.to_numeric, errors='coerce')
 
-        # Remover linhas completamente vazias ou que ficaram com todos NaN
-        df.dropna(how='all', inplace=True)
+        df.dropna(inplace=True)
+
+        if colunas_esperadas:
+            validar_variaveis(df, colunas_esperadas)
+
+        if exportar_csv_limpo:
+            temp_path = "temp_clean.csv"
+            df.to_csv(temp_path, index=False)
+            return df, temp_path
 
         return df
 
