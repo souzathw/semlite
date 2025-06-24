@@ -1,4 +1,4 @@
-from semlite.utils import validar_csv, validar_variaveis, print_sucesso, carregar_csv_robusto
+from semlite.utils import validar_csv, validar_variaveis, carregar_csv_robusto, print_sucesso
 from semlite.r_helpers import run_lavaan_sem
 
 def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indicators=None, estimator="WLSMV"):
@@ -6,8 +6,8 @@ def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indica
         validar_csv(data_path)
         df = carregar_csv_robusto(data_path)
 
-        for itens in indicators.values():
-            validar_variaveis(df, itens)
+        for items in indicators.values():
+            validar_variaveis(df, items)
 
         model_desc = ""
         for factor, items in indicators.items():
@@ -18,38 +18,31 @@ def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indica
             df['MOD_mean'] = df[indicators[moderator]].mean(axis=1)
             df['interaction'] = df['IV_mean'] * df['MOD_mean']
             model_desc += f"{dv} ~ {iv} + {moderator} + interaction\n"
-
-        elif interaction_type == 'product':
-            interaction_vars = []
+        else:  
+            interaction_cols = []
             for x in indicators[iv]:
                 for z in indicators[moderator]:
-                    col_name = f"{x}_{z}"
-                    df[col_name] = df[x] * df[z]
-                    interaction_vars.append(col_name)
-
-            interaction_factor = f"{iv}_x_{moderator}"
-            model_desc += f"{interaction_factor} =~ " + " + ".join(interaction_vars) + "\n"
-            model_desc += f"{dv} ~ {iv} + {moderator} + {interaction_factor}\n"
-
-        else:
-            raise ValueError("❌ O parâmetro 'interaction_type' deve ser 'mean' ou 'product'.")
-
-        ordered_vars = indicators.get(dv, None)
-
-        lavaan_result = run_lavaan_sem(
-            model_desc=model_desc,
-            df=df,
-            estimator=estimator,
-            ordered_vars=ordered_vars
-        )
+                    col = f"{x}_{z}"
+                    df[col] = df[x] * df[z]
+                    interaction_cols.append(col)
+            factor_name = f"{iv}_x_{moderator}"
+            model_desc += f"{factor_name} =~ " + " + ".join(interaction_cols) + "\n"
+            model_desc += f"{dv} ~ {iv} + {moderator} + {factor_name}\n"
+        csv_clean = "temp_clean.csv"
+        df.to_csv(csv_clean, index=False)
+        ordered = indicators.get(dv)
+        res = run_lavaan_sem(model_desc, csv_clean, estimator=estimator, ordered_vars=ordered)
 
         print_sucesso("Moderação (via lavaan)")
+        estimates = res["estimates"]
+        if hasattr(estimates, "to_dict"):
+            estimates = estimates.to_dict(orient="records")
 
         return {
             "model_description": model_desc,
-            "fit_indices": lavaan_result["indices"],
-            "estimates": lavaan_result["estimates"].to_dict(orient='records'),
-            "summary": "\n".join(lavaan_result["summary"])
+            "fit_indices": res["indices"],
+            "estimates": estimates,
+            "summary": "\n".join(res["summary"])
         }
 
     except Exception as e:

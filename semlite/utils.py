@@ -5,26 +5,31 @@ import csv
 def validar_csv(path):
     if not os.path.exists(path):
         raise FileNotFoundError(f"❌ Erro: O arquivo '{path}' não foi encontrado.")
-    if not path.endswith('.csv'):
-        raise ValueError(f"❌ Erro: O arquivo '{path}' não é um arquivo CSV válido.")
+    if not (path.endswith('.csv') or path.endswith('.xlsx')):
+        raise ValueError(f"❌ Erro: O arquivo '{path}' não é CSV nem XLSX válido.")
 
 def validar_variaveis(df, variaveis):
-    faltando = [var for var in variaveis if var not in df.columns]
+    faltando = [v for v in variaveis if v not in df.columns]
     if faltando:
-        raise ValueError(f"❌ Erro: As variáveis seguintes não estão no CSV: {', '.join(faltando)}")
-
-def print_sucesso(modelo="Modelo"):
-    print(f"✅ {modelo} ajustado com sucesso.")
-    print("📊 Resultados prontos para análise.")
+        raise ValueError(f"❌ Erro: Faltam colunas: {', '.join(faltando)}")
 
 def carregar_csv_robusto(path):
-    try:
-        with open(path, 'r', encoding='utf-8') as f:
-            sample = f.read(2048)
-            dialect = csv.Sniffer().sniff(sample)
-            f.seek(0)
-            df = pd.read_csv(f, delimiter=dialect.delimiter)
-        df.columns = df.columns.str.strip() 
-        return df
-    except Exception as e:
-        raise ValueError(f"❌ Erro ao carregar o CSV: {e}")
+    if path.endswith('.csv'):
+        for enc in ('utf-8', 'latin1', 'utf-16'):
+            try:
+                with open(path, encoding=enc) as f:
+                    sample = f.read(2048); f.seek(0)
+                    dialect = csv.Sniffer().sniff(sample)
+                    df = pd.read_csv(f, delimiter=dialect.delimiter)
+                break
+            except Exception:
+                continue
+        else:
+            df = pd.read_csv(path)
+    else:
+        df = pd.read_excel(path)
+    df.columns = df.columns.str.strip()
+    df = df.apply(lambda c: c.str.strip() if c.dtype == object else c)
+    df = df.apply(pd.to_numeric, errors='coerce')
+    df.dropna(inplace=True)
+    return df
