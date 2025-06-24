@@ -41,12 +41,16 @@ def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indica
             ordered_vars=ordered_vars
         )
 
+        estimates = lavaan_result["estimates"]
+        if hasattr(estimates, "to_dict"):
+            estimates = estimates.to_dict(orient='records')
+
         print_sucesso("Moderação (via lavaan)")
 
         return {
             "model_description": model_desc,
             "fit_indices": lavaan_result["indices"],
-            "estimates": lavaan_result["estimates"],
+            "estimates": estimates,
             "summary": "\n".join(lavaan_result["summary"])
         }
 
