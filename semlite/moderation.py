@@ -5,6 +5,7 @@ def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indica
     try:
         validar_csv(data_path)
         df = carregar_arquivo_robusto(data_path)
+
         for itens in indicators.values():
             validar_variaveis(df, itens)
 

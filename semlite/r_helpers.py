@@ -27,11 +27,14 @@ def run_lavaan_sem(model_desc, df, estimator="WLSMV", ordered_vars=None):
     """)
 
     indices = dict(zip(ro.r('names(indices)'), list(ro.r('indices'))))
-    estimates_df = rpy2py(ro.r('estimates'))
+
+    with localconverter(default_converter + pandas2ri.converter):
+        estimates_df = rpy2py(ro.r('estimates'))
+
     summary_out = list(ro.r('resumo'))
 
     return {
         "indices": indices,
-        "estimates": estimates_df,
+        "estimates": estimates_df,  
         "summary": summary_out
     }
