@@ -5,26 +5,32 @@ import csv
 def validar_csv(path):
     if not os.path.exists(path):
         raise FileNotFoundError(f"❌ Erro: O arquivo '{path}' não foi encontrado.")
-    if not path.endswith('.csv'):
-        raise ValueError(f"❌ Erro: O arquivo '{path}' não é um arquivo CSV válido.")
+    if not (path.endswith('.csv') or path.endswith('.xlsx')):
+        raise ValueError(f"❌ Erro: O arquivo '{path}' não é CSV nem XLSX válido.")
 
 def validar_variaveis(df, variaveis):
     faltando = [var for var in variaveis if var not in df.columns]
     if faltando:
-        raise ValueError(f"❌ Erro: As variáveis seguintes não estão no CSV: {', '.join(faltando)}")
+        raise ValueError(f"❌ Erro: As variáveis seguintes não estão no arquivo: {', '.join(faltando)}")
 
 def print_sucesso(modelo="Modelo"):
     print(f"✅ {modelo} ajustado com sucesso.")
     print("📊 Resultados prontos para análise.")
 
-def carregar_csv_robusto(path):
+def carregar_arquivo_robusto(path):
     try:
-        with open(path, 'r', encoding='utf-8') as f:
-            sample = f.read(2048)
-            dialect = csv.Sniffer().sniff(sample)
-            f.seek(0)
-            df = pd.read_csv(f, delimiter=dialect.delimiter)
-        df.columns = df.columns.str.strip() 
+        if path.endswith('.csv'):
+            with open(path, 'r', encoding='utf-8') as f:
+                sample = f.read(2048)
+                dialect = csv.Sniffer().sniff(sample)
+                f.seek(0)
+                df = pd.read_csv(f, delimiter=dialect.delimiter)
+        elif path.endswith('.xlsx'):
+            df = pd.read_excel(path)
+        else:
+            raise ValueError("❌ Formato de arquivo não suportado. Use .csv ou .xlsx.")
+
+        df.columns = df.columns.str.strip()
         return df
     except Exception as e:
-        raise ValueError(f"❌ Erro ao carregar o CSV: {e}")
+        raise ValueError(f"❌ Erro ao carregar o arquivo: {e}")
