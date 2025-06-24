@@ -1,38 +1,44 @@
-import rpy2.robjects as robjects
+import rpy2.robjects as ro
 from rpy2.robjects import pandas2ri
-from rpy2.robjects.packages import importr
-from rpy2.robjects.vectors import StrVector
+from rpy2.robjects.conversion import localconverter
+from rpy2.robjects import default_converter
+from rpy2.robjects.pandas2ri import py2rpy, rpy2py
 
-pandas2ri.activate()
+ro.r('library(lavaan)')
 
-def run_lavaan_sem(model_desc, csv_path, estimator="ML", ordered_vars=None):
-    try:
-        base = importr("base")
-        utils = importr("utils")
-        lavaan = importr("lavaan")
+def run_lavaan_sem(model_desc, df, estimator="WLSMV", ordered_vars=None):
+    with localconverter(default_converter + pandas2ri.converter):
+        r_df = py2rpy(df)
 
-        robjects.r(f'df <- read.csv("{csv_path}")')
-        robjects.r('df <- na.omit(df)')
+    ro.globalenv['dados1'] = r_df
+    ro.globalenv['modelo'] = model_desc
 
-        if ordered_vars:
-            ordered_vector = StrVector(ordered_vars)
-            robjects.r.assign("ordered_vars", ordered_vector)
-            robjects.r('for (v in ordered_vars) { df[[v]] <- as.ordered(df[[v]]) }')
-        robjects.r.assign("model", model_desc)
+    if ordered_vars is not None:
+        ro.globalenv['ordered_vars'] = ro.StrVector(ordered_vars)
+        ro.r(f'''
+        fit <- sem(model=modelo, data=dados1, ordered=ordered_vars, estimator="{estimator}")
+        ''')
+    else:
+        ro.r(f'''
+        fit <- sem(model=modelo, data=dados1, estimator="{estimator}")
+        ''')
 
-        robjects.r(f'fit <- sem(model, data = df, estimator = "{estimator}")')
-        summary_result = robjects.r('capture.output(summary(fit, fit.measures = TRUE))')
-        summary_list = list(summary_result)
-        fit_indices = robjects.r('fitMeasures(fit)')
-        indices = dict(zip(fit_indices.names, list(fit_indices)))
-        est = robjects.r('parameterEstimates(fit, standardized = TRUE)')
-        estimates_df = pandas2ri.rpy2py(est)
+    ro.r('''
+    indices <- fitMeasures(fit, c("chisq", "df", "cfi", "tli", "rmsea", "rmsea.ci.lower", "rmsea.ci.upper", "srmr"))
+    estimates <- parameterEstimates(fit, standardized=TRUE)
+    resumo <- capture.output(summary(fit, standardized=TRUE))
+    ''')
 
-        return {
-            "summary": summary_list,
-            "indices": indices,
-            "estimates": estimates_df
-        }
+    indices = dict(zip(ro.r('names(indices)'), list(ro.r('indices'))))
+    estimates_r = ro.r('estimates')
+    resumo_r = ro.r('resumo')
 
-    except Exception as e:
-        raise RuntimeError(f"❌ Erro em run_lavaan_sem(): {e}")
+    with localconverter(default_converter + pandas2ri.converter):
+        estimates_df = rpy2py(estimates_r)
+        resumo = list(resumo_r)
+
+    return {
+        "indices": indices,
+        "estimates": estimates_df,
+        "summary": resumo
+    }

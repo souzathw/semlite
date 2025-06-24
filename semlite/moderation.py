@@ -1,16 +1,13 @@
-from semlite.utils import validar_csv, validar_variaveis, print_sucesso, carregar_arquivo_robusto
+from semlite.utils import validar_csv, validar_variaveis, print_sucesso, carregar_csv_robusto
 from semlite.r_helpers import run_lavaan_sem
 
 def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indicators=None, estimator="WLSMV"):
     try:
         validar_csv(data_path)
+        df = carregar_csv_robusto(data_path)
 
-        expected_columns = sum(indicators.values(), [])
-        df, _ = carregar_arquivo_robusto(
-            data_path,
-            colunas_esperadas=expected_columns,
-            exportar_csv_limpo=False
-        )
+        for itens in indicators.values():
+            validar_variaveis(df, itens)
 
         model_desc = ""
         for factor, items in indicators.items():
@@ -37,29 +34,21 @@ def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indica
         else:
             raise ValueError("❌ O parâmetro 'interaction_type' deve ser 'mean' ou 'product'.")
 
-        temp_csv_path = "temp_clean.csv"
-        df.to_csv(temp_csv_path, index=False)
-
         ordered_vars = indicators.get(dv, None)
 
         lavaan_result = run_lavaan_sem(
             model_desc=model_desc,
-            csv_path=temp_csv_path,
+            df=df,
             estimator=estimator,
             ordered_vars=ordered_vars
         )
 
-        print(f"🧼 CSV limpo utilizado: {temp_csv_path}")
         print_sucesso("Moderação (via lavaan)")
-
-        estimates = lavaan_result["estimates"]
-        if hasattr(estimates, "to_dict"):
-            estimates = estimates.to_dict(orient='records')
 
         return {
             "model_description": model_desc,
             "fit_indices": lavaan_result["indices"],
-            "estimates": estimates,
+            "estimates": lavaan_result["estimates"].to_dict(orient='records'),
             "summary": "\n".join(lavaan_result["summary"])
         }
 
