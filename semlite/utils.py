@@ -31,6 +31,10 @@ def carregar_arquivo_robusto(path):
             raise ValueError("❌ Formato de arquivo não suportado. Use .csv ou .xlsx.")
 
         df.columns = df.columns.str.strip()
+
+        df = df.apply(lambda col: col.map(lambda x: x.strip() if isinstance(x, str) else x))
+
         return df
+
     except Exception as e:
         raise ValueError(f"❌ Erro ao carregar o arquivo: {e}")

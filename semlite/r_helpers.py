@@ -18,22 +18,20 @@ def run_lavaan_sem(model_desc, df, estimator="WLSMV", ordered_vars=None):
         ordered_arg = 'ordered=ordered_vars,'
     else:
         ordered_arg = ''
-
     ro.r(f"""
     fit <- sem(model=modelo, data=dados1, {ordered_arg} estimator='{estimator}')
     indices <- fitMeasures(fit, c('chisq', 'df', 'cfi', 'tli', 'rmsea', 'rmsea.ci.lower', 'rmsea.ci.upper', 'srmr'))
     estimates <- parameterEstimates(fit, standardized=TRUE)
     resumo <- capture.output(summary(fit, standardized=TRUE))
     """)
-
     indices = dict(zip(ro.r('names(indices)'), list(ro.r('indices'))))
-    summary_out = list(ro.r('resumo'))
 
     with localconverter(default_converter + pandas2ri.converter):
         estimates_df = rpy2py(ro.r('estimates'))
+        summary_out = list(ro.r('resumo'))
 
     return {
         "indices": indices,
-        "estimates": estimates_df.to_dict(orient="records"),
+        "estimates": estimates_df,
         "summary": summary_out
     }
