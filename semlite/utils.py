@@ -9,30 +9,28 @@ def validar_csv(path):
         raise ValueError(f"❌ Erro: O arquivo '{path}' não é CSV nem XLSX válido.")
 
 def validar_variaveis(df, variaveis):
-    faltando = [v for v in variaveis if v not in df.columns]
+    faltando = [var for var in variaveis if var not in df.columns]
     if faltando:
-        raise ValueError(f"❌ Erro: Faltam colunas: {', '.join(faltando)}")
+        raise ValueError(f"❌ Erro: As variáveis seguintes não estão no arquivo: {', '.join(faltando)}")
 
-def carregar_csv_robusto(path):
-    if path.endswith('.csv'):
-        for enc in ('utf-8', 'latin1', 'utf-16'):
-            try:
-                with open(path, encoding=enc) as f:
-                    samp = f.read(2048); f.seek(0)
-                    delim = csv.Sniffer().sniff(samp).delimiter
-                    df = pd.read_csv(f, delimiter=delim)
-                break
-            except Exception:
-                continue
+def print_sucesso(modelo="Modelo"):
+    print(f"✅ {modelo} ajustado com sucesso.")
+    print("📊 Resultados prontos para análise.")
+
+def carregar_arquivo_robusto(path):
+    try:
+        if path.endswith('.csv'):
+            with open(path, 'r', encoding='utf-8') as f:
+                sample = f.read(2048)
+                dialect = csv.Sniffer().sniff(sample)
+                f.seek(0)
+                df = pd.read_csv(f, delimiter=dialect.delimiter)
+        elif path.endswith('.xlsx'):
+            df = pd.read_excel(path)
         else:
-            df = pd.read_csv(path)
-    else:
-        df = pd.read_excel(path)
-    df.columns = df.columns.str.strip()
-    # strip em strings
-    for col in df.select_dtypes(include="object"):
-        df[col] = df[col].str.strip()
-    # força numérico
-    df = df.apply(pd.to_numeric, errors='coerce')
-    df.dropna(inplace=True)
-    return df
+            raise ValueError("❌ Formato de arquivo não suportado. Use .csv ou .xlsx.")
+
+        df.columns = df.columns.str.strip()
+        return df
+    except Exception as e:
+        raise ValueError(f"❌ Erro ao carregar o arquivo: {e}")
