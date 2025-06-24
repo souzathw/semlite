@@ -4,12 +4,14 @@ from semlite.r_helpers import run_lavaan_sem
 def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indicators=None, estimator="WLSMV"):
     try:
         validar_csv(data_path)
-        expected_columns = sum(indicators.values(), []) 
-        df, temp_csv_path = carregar_arquivo_robusto(
+
+        expected_columns = sum(indicators.values(), [])  # lista achatada
+        df, _ = carregar_arquivo_robusto(
             data_path,
             colunas_esperadas=expected_columns,
-            exportar_csv_limpo=True
+            exportar_csv_limpo=False  # ← não salva ainda
         )
+
         model_desc = ""
         for factor, items in indicators.items():
             model_desc += f"{factor} =~ " + " + ".join(items) + "\n"
@@ -35,11 +37,15 @@ def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indica
         else:
             raise ValueError("❌ O parâmetro 'interaction_type' deve ser 'mean' ou 'product'.")
 
+        # Salvar CSV final com colunas de interação
+        temp_csv_path = "temp_clean.csv"
+        df.to_csv(temp_csv_path, index=False)
+
         ordered_vars = indicators.get(dv, None)
 
         lavaan_result = run_lavaan_sem(
             model_desc=model_desc,
-            df=df,
+            csv_path=temp_csv_path,
             estimator=estimator,
             ordered_vars=ordered_vars
         )

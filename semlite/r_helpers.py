@@ -26,8 +26,7 @@ def run_lavaan_sem(model_desc, csv_path="temp_clean.csv", estimator="WLSMV", ord
         fit <- sem(model = modelo, data = dados1, estimator = "{estimator}")
         ''')
 
-    converged = bool(ro.r('lavInspect(fit, "converged")')[0])
-    if not converged:
+    if not bool(ro.r('lavInspect(fit, "converged")')[0]):
         raise RuntimeError("❌ lavaan->lav_fit_measures(): fit measures not available if model did not converge")
 
     ro.r('''
