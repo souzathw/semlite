@@ -46,7 +46,7 @@ def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indica
         return {
             "model_description": model_desc,
             "fit_indices": lavaan_result["indices"],
-            "estimates": lavaan_result["estimates"].to_dict(orient='records'),
+            "estimates": lavaan_result["estimates"],
             "summary": "\n".join(lavaan_result["summary"])
         }
 
