@@ -1,63 +1,47 @@
-from semlite.utils import validar_csv, validar_variaveis, print_sucesso, carregar_arquivo_robusto
-from semlite.r_helpers import run_lavaan_sem
+import rpy2.robjects as ro
+from rpy2.robjects.vectors import StrVector
+from pathlib import Path
 
-def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indicators=None, estimator="WLSMV"):
-    try:
-        validar_csv(data_path)
+def run_lavaan_sem(model_desc, csv_path="temp_clean.csv", estimator="WLSMV", ordered_vars=None):
+    if not Path(csv_path).exists():
+        raise FileNotFoundError(f"❌ Arquivo CSV não encontrado: {csv_path}")
 
-        expected_columns = sum(indicators.values(), []) 
-        df, _ = carregar_arquivo_robusto(
-            data_path,
-            colunas_esperadas=expected_columns,
-            exportar_csv_limpo=False  
-        )
-        interaction_vars = []
-        model_desc = ""
+    ro.r('library(lavaan)')
+    ro.r.assign("modelo", model_desc)
+    ro.r.assign("caminho_csv", str(csv_path))
 
-        for factor, items in indicators.items():
-            model_desc += f"{factor} =~ " + " + ".join(items) + "\n"
+    ro.r('''
+    dados1 <- read.csv(caminho_csv, stringsAsFactors = FALSE)
+    dados1 <- na.omit(dados1)
+    dados1[] <- lapply(dados1, function(x) as.numeric(as.character(x)))
+    ''')
 
-        if interaction_type == 'mean':
-            df['IV_mean'] = df[indicators[iv]].mean(axis=1)
-            df['MOD_mean'] = df[indicators[moderator]].mean(axis=1)
-            df['interaction'] = df['IV_mean'] * df['MOD_mean']
-            model_desc += f"{dv} ~ {iv} + {moderator} + interaction\n"
+    if ordered_vars:
+        ro.globalenv['ordered_vars'] = StrVector(ordered_vars)
+        ro.r(f'''
+        fit <- sem(model = modelo, data = dados1, ordered = ordered_vars, estimator = "{estimator}")
+        ''')
+    else:
+        ro.r(f'''
+        fit <- sem(model = modelo, data = dados1, estimator = "{estimator}")
+        ''')
 
-        elif interaction_type == 'product':
-            for x in indicators[iv]:
-                for z in indicators[moderator]:
-                    col_name = f"{x}_{z}"
-                    df[col_name] = df[x] * df[z]
-                    interaction_vars.append(col_name)
+    converged = bool(ro.r('lavInspect(fit, "converged")')[0])
+    if not converged:
+        raise RuntimeError("❌ lavaan->lav_fit_measures(): fit measures not available if model did not converge")
 
-            interaction_factor = f"{iv}_x_{moderator}"
-            model_desc += f"{interaction_factor} =~ " + " + ".join(interaction_vars) + "\n"
-            model_desc += f"{dv} ~ {iv} + {moderator} + {interaction_factor}\n"
+    ro.r('''
+    indices <- fitMeasures(fit, c("chisq", "df", "cfi", "tli", "rmsea", "rmsea.ci.lower", "rmsea.ci.upper", "srmr"))
+    estimates <- parameterEstimates(fit, standardized=TRUE)
+    resumo <- capture.output(summary(fit, standardized=TRUE))
+    ''')
 
-        else:
-            raise ValueError("❌ O parâmetro 'interaction_type' deve ser 'mean' ou 'product'.")
-        temp_csv_path = "temp_clean.csv"
-        df.to_csv(temp_csv_path, index=False)
+    indices = dict(zip(ro.r('names(indices)'), list(ro.r('indices'))))
+    estimates_df = ro.conversion.rpy2py(ro.r('estimates'))
+    resumo_list = list(ro.r('resumo'))
 
-        ordered_vars = indicators.get(dv, None)
-
-        lavaan_result = run_lavaan_sem(
-            model_desc=model_desc,
-            csv_path=temp_csv_path,
-            estimator=estimator,
-            ordered_vars=ordered_vars
-        )
-
-        print(f"🧼 CSV limpo utilizado: {temp_csv_path}")
-        print_sucesso("Moderação (via lavaan)")
-
-        return {
-            "model_description": model_desc,
-            "fit_indices": lavaan_result["indices"],
-            "estimates": lavaan_result["estimates"].to_dict(orient='records'),
-            "summary": "\n".join(lavaan_result["summary"])
-        }
-
-    except Exception as e:
-        print(f"❌ Erro ao rodar a moderação: {e}")
-        return None
+    return {
+        "indices": indices,
+        "estimates": estimates_df,
+        "summary": resumo_list
+    }
