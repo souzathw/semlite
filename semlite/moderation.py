@@ -42,16 +42,22 @@ def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indica
             ordered_vars=ordered_vars
         )
 
-        estimates = lavaan_result["estimates"]
-        if not isinstance(estimates, pd.DataFrame):
-            estimates = pd.DataFrame(estimates)
+        estimates_raw = lavaan_result["estimates"]
+
+        try:
+            if isinstance(estimates_raw, pd.DataFrame):
+                estimates = estimates_raw.to_dict(orient='records')
+            else:
+                estimates = pd.DataFrame(estimates_raw).to_dict(orient='records')
+        except Exception as err:
+            raise ValueError(f"❌ Erro ao processar as estimativas: tipo={type(estimates_raw)} / erro={err}")
 
         print_sucesso("Moderação (via lavaan)")
 
         return {
             "model_description": model_desc,
             "fit_indices": lavaan_result["indices"],
-            "estimates": estimates.to_dict(orient='records'),
+            "estimates": estimates,
             "summary": "\n".join(lavaan_result["summary"])
         }
 
