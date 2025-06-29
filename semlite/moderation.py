@@ -1,5 +1,6 @@
 from semlite.utils import validar_csv, validar_variaveis, print_sucesso, carregar_arquivo_robusto
 from semlite.r_helpers import run_lavaan_sem
+import pandas as pd
 
 def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indicators=None, estimator="WLSMV"):
     try:
@@ -42,15 +43,15 @@ def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indica
         )
 
         estimates = lavaan_result["estimates"]
-        if hasattr(estimates, "to_dict"):
-            estimates = estimates.to_dict(orient='records')
+        if not isinstance(estimates, pd.DataFrame):
+            estimates = pd.DataFrame(estimates)
 
         print_sucesso("Moderação (via lavaan)")
 
         return {
             "model_description": model_desc,
             "fit_indices": lavaan_result["indices"],
-            "estimates": estimates,
+            "estimates": estimates.to_dict(orient='records'),
             "summary": "\n".join(lavaan_result["summary"])
         }
 
