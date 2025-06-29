@@ -4,10 +4,12 @@ from rpy2.robjects.conversion import localconverter
 from rpy2.robjects import default_converter
 from rpy2.robjects.pandas2ri import py2rpy, rpy2py
 
+pandas2ri.activate()
+
 ro.r('library(lavaan)')
 
 def run_lavaan_sem(model_desc, df, estimator="WLSMV", ordered_vars=None):
-    with localconverter(default_converter + pandas2ri.converter):
+    with localconverter(pandas2ri.converter):
         r_df = py2rpy(df)
 
     ro.globalenv['dados1'] = r_df
@@ -26,11 +28,11 @@ def run_lavaan_sem(model_desc, df, estimator="WLSMV", ordered_vars=None):
     resumo <- capture.output(summary(fit, standardized=TRUE))
     """)
 
-    indices = dict(zip(ro.r('names(indices)'), list(ro.r('indices'))))
-
-    with localconverter(default_converter + pandas2ri.converter):
+    with localconverter(pandas2ri.converter):
         estimates_df = rpy2py(ro.r('estimates'))
-        summary_out = list(ro.r('resumo'))
+
+    summary_out = list(ro.r('resumo'))
+    indices = dict(zip(ro.r('names(indices)'), list(ro.r('indices'))))
 
     return {
         "indices": indices,
