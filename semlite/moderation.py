@@ -11,6 +11,7 @@ def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indica
             validar_variaveis(df, itens)
 
         model_desc = ""
+
         for factor, items in indicators.items():
             model_desc += f"{factor} =~ " + " + ".join(items) + "\n"
 
@@ -27,13 +28,22 @@ def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indica
                     col_name = f"{x}_{z}"
                     df[col_name] = df[x] * df[z]
                     interaction_vars.append(col_name)
+
             interaction_factor = f"{iv}_x_{moderator}"
             model_desc += f"{interaction_factor} =~ " + " + ".join(interaction_vars) + "\n"
             model_desc += f"{dv} ~ {iv} + {moderator} + {interaction_factor}\n"
+
+
+            model_desc += f"{iv} ~~ {moderator}\n"
+            model_desc += f"{iv} ~~ {interaction_factor}\n"
+            model_desc += f"{moderator} ~~ {interaction_factor}\n"
         else:
             raise ValueError("❌ O parâmetro 'interaction_type' deve ser 'mean' ou 'product'.")
 
         ordered_vars = indicators.get(dv, None)
+
+        print("\n📄 Modelo Lavaan gerado:\n")
+        print(model_desc)
 
         lavaan_result = run_lavaan_sem(
             model_desc=model_desc,
@@ -42,13 +52,12 @@ def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indica
             ordered_vars=ordered_vars
         )
 
-        # Conversão robusta de estimates
         try:
             estimates_df = pd.DataFrame(lavaan_result["estimates"])
             print(f"📦 estimates_df convertido: {type(estimates_df)} shape={estimates_df.shape}")
             estimates = estimates_df.to_dict(orient="records")
         except Exception as err:
-            raise ValueError(f"❌ Erro final ao converter estimates: {type(lavaan_result['estimates'])} / {err}")
+            raise ValueError(f"❌ Erro ao processar estimates: tipo={type(lavaan_result['estimates'])} / erro={err}")
 
         print_sucesso("Moderação (via lavaan)")
 
