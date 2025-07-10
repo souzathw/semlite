@@ -69,7 +69,7 @@ def run_moderation(data_path, iv, dv, moderator, interaction_type='mean', indica
         }
 
     except Exception as e:
-        print(f"❌ Erro ao rodar a moderaação: {e}")
+        print(f"❌ Erro ao rodar a moderaaação: {e}")
         return {
             "model_description": "",
             "fit_indices": {},
