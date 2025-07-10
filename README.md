@@ -7,7 +7,7 @@
 
 ---
 
-## 🎯 O que é o SEMLITE?
+## 🌟 O que é o SEMLITE?
 
 **SEMLITE** é um pacote Python criado para **facilitar análises de Modelagem de Equações Estruturais (MEE)** — como **mediação**, **moderação** e **análise fatorial confirmatória (CFA)** — de maneira simples e intuitiva.
 
@@ -31,37 +31,39 @@ O foco principal é permitir que **pesquisadores da Psicologia, Educação e Ci�
 
 > ⚠️ É necessário já ter o **Python** instalado no seu sistema.
 
-1️⃣ No console do R, instale o pacote `reticulate`:
+1⃣ No console do R, instale o pacote `reticulate`:
 
 ```r
 install.packages("reticulate")
 ```
 
-2️⃣ Em seguida, execute as importações necessárias:
+2⃣ Em seguida, execute as importações completas:
 
 ```r
 library(reticulate)
-
+reticulate::py_run_string("import os; os.system('pip uninstall -y semlite')")
 py_install("git+https://github.com/souzathw/semlite.git")
+install.packages("lavaan")
+reticulate::py_install("chardet", pip = TRUE)
 sem <- import("semlite.moderation")
 ```
 
-3️⃣ Carregue seu arquivo CSV:
+3⃣ Selecione o CSV com seus dados:
 
 ```r
-caminho_csv <- file.choose()
-df <- read.csv(caminho_csv, sep = ",")
+caminho_arquivo <- file.choose()
+cat("Arquivo selecionado:", caminho_arquivo, "\n")
 ```
 
-4️⃣ Rode o modelo de moderação (edite as variáveis conforme seu banco de dados):
+4⃣ Rode o modelo de moderação com estrutura completa:
 
 ```r
 result <- sem$run_moderation(
-  data_path = caminho_csv,
+  data_path = caminho_arquivo,
   iv = "SAUFAM",
   dv = "CULPA",
   moderator = "SSF",
-  interaction_type = "mean",  # ou "product" para interação produto
+  interaction_type = "product",
   indicators = dict(
     SAUFAM = c("SAUFAM1", "SAUFAM2", "SAUFAM3", "SAUFAM4", "SAUFAM5"),
     SSF = c("SSF1", "SSF2", "SSF3", "SSF4"),
@@ -70,11 +72,21 @@ result <- sem$run_moderation(
   )
 )
 
-cat("Modelo de Moderação construído:\n")
+cat(" Modelo de Moderação construído:\n")
 cat(result$model_description, "\n\n")
 
-cat("Estimativas dos parâmetros:\n")
-print(result$estimates)
+cat("Índices de ajuste:\n")
+cat("CFI: ", result$fit_indices$cfi, "\n")
+cat("TLI: ", result$fit_indices$tli, "\n")
+cat("RMSEA: ", result$fit_indices$rmsea, "\n")
+cat("SRMR: ", result$fit_indices$srmr, "\n")
+
+cat("\n📊 Estimativas dos parâmetros (somente regressões):\n")
+regs <- Filter(function(x) x$op == "~", result$estimates)
+print(regs)
+
+cat("\n Resumo do Lavaan:\n")
+cat(result$summary, sep = "\n")
 ```
 
 ---

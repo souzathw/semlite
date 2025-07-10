@@ -1,6 +1,8 @@
 library(reticulate)
-py_install("git+https://github.com/souzathw/semlite.git", pip = TRUE)
+#Desinstalar caso dê erro: reticulate::py_run_string("import os; os.system('pip uninstall -y semlite')")
+py_install("git+https://github.com/souzathw/semlite.git")
 install.packages("lavaan")
+reticulate::py_install("chardet", pip = TRUE)
 sem <- import("semlite.moderation")
 
 caminho_arquivo <- file.choose()
