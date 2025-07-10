@@ -18,10 +18,21 @@ def run_lavaan_sem(model_desc, df, estimator="WLSMV", ordered_vars=None):
         ordered_arg = ''
 
     ro.r(f"""
-    fit <- sem(model=modelo, data=dados1, {ordered_arg} estimator='{estimator}')
+    fit <- sem(
+      model = modelo,
+      data = dados1,
+      {ordered_arg}
+      estimator = '{estimator}',
+      fixed.x = FALSE,
+      std.lv = TRUE,
+      check.gradient = FALSE,
+      start = 'simple',
+      control = list(rel.tol = 1e-5, max.iter = 10000)
+    )
+
     indices <- fitMeasures(fit, c('chisq', 'df', 'cfi', 'tli', 'rmsea', 'rmsea.ci.lower', 'rmsea.ci.upper', 'srmr'))
-    estimates <- parameterEstimates(fit, standardized=TRUE)
-    resumo <- capture.output(summary(fit, standardized=TRUE))
+    estimates <- parameterEstimates(fit, standardized = TRUE)
+    resumo <- capture.output(summary(fit, standardized = TRUE))
     """)
 
     with localconverter(pandas2ri.converter):
