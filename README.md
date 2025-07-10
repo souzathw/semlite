@@ -41,7 +41,6 @@ install.packages("reticulate")
 
 ```r
 library(reticulate)
-reticulate::py_run_string("import os; os.system('pip uninstall -y semlite')")
 py_install("git+https://github.com/souzathw/semlite.git")
 install.packages("lavaan")
 reticulate::py_install("chardet", pip = TRUE)
