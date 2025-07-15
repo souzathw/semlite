@@ -1,4 +1,3 @@
-import subprocess
 import os
 import pandas as pd
 import tempfile
@@ -16,11 +15,14 @@ def run_lavaan_sem(model_desc, df, estimator="WLSMV", ordered_vars=None):
 
         r_script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "lavaan_runner.R"))
 
-        cmd = ["Rscript", r_script_path, output_path, estimator]
+        cmd = f'"Rscript" "{r_script_path}" "{output_path}" "{estimator}"'
         if ordered_vars:
-            cmd.append(",".join(ordered_vars))
+            cmd += f' "{",".join(ordered_vars)}"'
 
-        subprocess.run(cmd, check=True)
+        # 🚨 AQUI está o diferencial que funciona
+        exit_code = os.system(cmd)
+        if exit_code != 0:
+            raise RuntimeError(f"Erro ao executar o script R (exit code {exit_code})")
 
         estimates = pd.read_csv(os.path.join(tmpdir, "estimates.csv"))
         indices = pd.read_csv(os.path.join(tmpdir, "indices.csv")).set_index("metric")["value"].to_dict()
