@@ -26,10 +26,18 @@ def run_lavaan_sem(model_desc, df, estimator="WLSMV", ordered_vars=None):
         result = subprocess.run(cmd, capture_output=True, text=True)
 
         if result.returncode != 0:
+            error_log_path = os.path.join(tmpdir, "lavaan_error.log")
+            lavaan_error = ""
+
+            if os.path.exists(error_log_path):
+                with open(error_log_path, encoding="utf-8") as f:
+                    lavaan_error = f.read()
+
             raise RuntimeError(
                 f"Erro ao rodar Rscript:\n\n"
-                f" STDOUT:\n{result.stdout}\n\n"
-                f" STDERR:\n{result.stderr}"
+                f"📤 STDOUT:\n{result.stdout}\n\n"
+                f"📥 STDERR:\n{result.stderr}\n\n"
+                f"📄 LOG lavaan_error.log:\n{lavaan_error}"
             )
 
         estimates = pd.read_csv(os.path.join(tmpdir, "estimates.csv"))
