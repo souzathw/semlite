@@ -2,9 +2,12 @@ import rpy2.robjects as ro
 from rpy2.robjects import pandas2ri
 from rpy2.robjects.conversion import localconverter
 
-ro.r('library(lavaan)')
-
 def run_lavaan_sem(model_desc, df, estimator="WLSMV", ordered_vars=None):
+    try:
+        ro.r('library(lavaan)')
+    except Exception as e:
+        raise RuntimeError(f"❌ Erro ao carregar o pacote lavaan no R: {e}")
+
     with localconverter(pandas2ri.converter):
         r_df = pandas2ri.py2rpy(df)
 
