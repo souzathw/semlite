@@ -7,8 +7,7 @@ setup(
     install_requires=[
         "pandas",
         "semopy",
-        "statsmodels",
-        "rpy2 >= 3.5.0", 
+        "statsmodels", 
     ],
     author="PontesTI",
     description="Pacote simplificado para análise de equações estruturais (MEE) ou SEM, com foco em mediação e moderação acessível via R",
