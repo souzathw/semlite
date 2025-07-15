@@ -14,12 +14,9 @@ def run_lavaan_sem(model_desc, df, estimator="WLSMV", ordered_vars=None):
         with open(model_path, "w", encoding="utf-8") as f:
             f.write(model_desc)
 
-        cmd = [
-            "Rscript",
-            os.path.join(os.path.dirname(__file__), "lavaan_runner.R"),
-            output_path,
-            estimator
-        ]
+        r_script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "lavaan_runner.R"))
+
+        cmd = ["Rscript", r_script_path, output_path, estimator]
         if ordered_vars:
             cmd.append(",".join(ordered_vars))
 
