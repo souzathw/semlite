@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import tempfile
+import subprocess
 
 def run_lavaan_sem(model_desc, df, estimator="WLSMV", ordered_vars=None):
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -15,14 +16,20 @@ def run_lavaan_sem(model_desc, df, estimator="WLSMV", ordered_vars=None):
 
         r_script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "lavaan_runner.R"))
 
-        cmd = f'"Rscript" "{r_script_path}" "{output_path}" "{estimator}"'
+        cmd = ["Rscript", r_script_path, output_path, estimator]
         if ordered_vars:
-            cmd += f' "{",".join(ordered_vars)}"'
+            cmd.append(",".join(ordered_vars))
 
-        # 🚨 AQUI está o diferencial que funciona
-        exit_code = os.system(cmd)
-        if exit_code != 0:
-            raise RuntimeError(f"Erro ao executar o script R (exit code {exit_code})")
+        # 🔧 Redireciona stdout/stderr para arquivos para evitar [WinError 6]
+        stdout_path = os.path.join(tmpdir, "stdout.txt")
+        stderr_path = os.path.join(tmpdir, "stderr.txt")
+
+        with open(stdout_path, "w") as out, open(stderr_path, "w") as err:
+            result = subprocess.call(cmd, stdout=out, stderr=err)
+
+        if result != 0:
+            with open(stderr_path, "r", encoding="utf-8") as errf:
+                raise RuntimeError(f"Erro ao rodar Rscript:\n{errf.read()}")
 
         estimates = pd.read_csv(os.path.join(tmpdir, "estimates.csv"))
         indices = pd.read_csv(os.path.join(tmpdir, "indices.csv")).set_index("metric")["value"].to_dict()
