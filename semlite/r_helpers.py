@@ -45,5 +45,5 @@ def run_lavaan_sem(model_desc, df, estimator="WLSMV", ordered_vars=None):
         return {
             "indices": indices,
             "estimates": estimates,
-            "summary": summary
+            "summary": summary.splitlines()
         }
