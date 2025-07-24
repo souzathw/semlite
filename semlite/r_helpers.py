@@ -1,48 +1,49 @@
-import rpy2.robjects as ro
-from rpy2.robjects import pandas2ri
-from rpy2.robjects.conversion import localconverter
+import subprocess
+import os
+import pandas as pd
+import tempfile
 
-ro.r('library(lavaan)')
+R_SCRIPT_PATH = os.path.join(os.path.dirname(__file__), "lavaan_runner.R")
 
 def run_lavaan_sem(model_desc, df, estimator="WLSMV", ordered_vars=None):
-    with localconverter(pandas2ri.converter):
-        r_df = pandas2ri.py2rpy(df)
+    if not os.path.isfile(R_SCRIPT_PATH):
+        raise FileNotFoundError(f"⚠️ Arquivo lavaan_runner.R não encontrado em: {R_SCRIPT_PATH}")
 
-    ro.globalenv['dados1'] = r_df
-    ro.globalenv['modelo'] = model_desc
+    with tempfile.TemporaryDirectory() as tmpdir:
+        model_path = os.path.join(tmpdir, "modelo.txt")
+        data_path = os.path.join(tmpdir, "dados.csv")
+        output_path = tmpdir
+        log_path = os.path.join(tmpdir, "lavaan_error.log")
 
-    if ordered_vars:
-        ro.globalenv['ordered_vars'] = ro.StrVector(ordered_vars)
-        ordered_arg = 'ordered=ordered_vars,'
-    else:
-        ordered_arg = ''
+        df.to_csv(data_path, index=False)
 
-    ro.r(f"""
-    fit <- sem(
-      model = modelo,
-      data = dados1,
-      {ordered_arg}
-      estimator = '{estimator}',
-      fixed.x = FALSE,
-      std.lv = TRUE,
-      check.gradient = FALSE,
-      start = 'simple',
-      control = list(rel.tol = 1e-5, max.iter = 10000)
-    )
+        with open(model_path, "w", encoding="utf-8") as f:
+            f.write(model_desc)
 
-    indices <- fitMeasures(fit, c('chisq', 'df', 'cfi', 'tli', 'rmsea', 'rmsea.ci.lower', 'rmsea.ci.upper', 'srmr'))
-    estimates <- parameterEstimates(fit, standardized = TRUE)
-    resumo <- capture.output(summary(fit, standardized = TRUE))
-    """)
+        cmd = ["Rscript", R_SCRIPT_PATH, output_path, estimator]
+        if ordered_vars:
+            cmd.append(",".join(ordered_vars))
 
-    with localconverter(pandas2ri.converter):
-        estimates_df = ro.r('estimates')
+        try:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+        except subprocess.CalledProcessError as e:
+            error_log = f"\n📤 STDOUT:\n{e.stdout}\n\n📥 STDERR:\n{e.stderr}\n"
+            with open(log_path, "w", encoding="utf-8") as f:
+                f.write(error_log)
+            raise RuntimeError(f"Erro ao rodar Rscript:{error_log}\n📄 LOG {log_path}:\n")
 
-    indices = dict(zip(ro.r('names(indices)'), list(ro.r('indices'))))
-    summary_out = list(ro.r('resumo'))
+        estimates = pd.read_csv(os.path.join(tmpdir, "estimates.csv"))
+        indices = pd.read_csv(os.path.join(tmpdir, "indices.csv")).set_index("metric")["value"].to_dict()
+        with open(os.path.join(tmpdir, "summary.txt"), encoding="utf-8") as f:
+            summary = f.read()
 
-    return {
-        "indices": indices,
-        "estimates": estimates_df,
-        "summary": summary_out
-    }
+        return {
+            "indices": indices,
+            "estimates": estimates,
+            "summary": summary.splitlines()
+        }
