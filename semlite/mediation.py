@@ -8,6 +8,7 @@ def run_mediation(data_path, iv, mediator, dv, indicators):
         for itens in indicators.values():
             validar_variaveis(df, itens)
 
+
         model_desc = ""
         for factor, items in indicators.items():
             model_desc += f"{factor} =~ " + " + ".join(items) + "\n"
