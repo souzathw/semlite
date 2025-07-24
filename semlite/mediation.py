@@ -1,5 +1,5 @@
-from semopy import ModelMeans
 from semlite.utils import validar_csv, validar_variaveis, print_sucesso, carregar_arquivo_robusto
+from semlite.r_helpers import run_lavaan_sem
 
 def run_mediation(data_path, iv, mediator, dv, indicators):
     try:
@@ -12,17 +12,18 @@ def run_mediation(data_path, iv, mediator, dv, indicators):
         for factor, items in indicators.items():
             model_desc += f"{factor} =~ " + " + ".join(items) + "\n"
 
-        model_desc += f"{mediator} ~ {iv}\n{dv} ~ {mediator} + {iv}"
+        model_desc += f"{mediator} ~ {iv}\n"
+        model_desc += f"{dv} ~ {mediator} + {iv}"
 
-        model = ModelMeans(model_desc)
-        model.fit(df)
+        result = run_lavaan_sem(model_desc, df)
 
-        estimates = model.inspect(std_est=True)
         print_sucesso("Mediação")
 
         return {
             "model_description": model_desc,
-            "estimates": estimates
+            "fit_indices": result["indices"],
+            "estimates": result["estimates"],
+            "summary": result["summary"]
         }
 
     except Exception as e:
