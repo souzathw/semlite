@@ -31,7 +31,7 @@ write.csv(
 
 indices <- fitMeasures(fit, c("chisq", "df", "cfi", "tli", "rmsea", "rmsea.ci.lower", "rmsea.ci.upper", "srmr"))
 write.csv(
-  data.frame(metric = names(indices), value = as.numeric(indices)),
+  data.frame(metric = names(indices), value = unname(indices)),
   file = file.path(output_dir, "indices.csv"),
   row.names = FALSE,
   fileEncoding = "UTF-8"
