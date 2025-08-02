@@ -25,7 +25,7 @@ def run_lavaan_sem(model_desc, df, estimator="WLSMV", ordered_vars=None):
             cmd.append(",".join(ordered_vars))
 
         try:
-            subprocess.run(
+            result = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
@@ -37,23 +37,17 @@ def run_lavaan_sem(model_desc, df, estimator="WLSMV", ordered_vars=None):
                 f.write(error_log)
             raise RuntimeError(f"Erro ao rodar Rscript:{error_log}\n📄 LOG {log_path}:\n")
 
-        # Lê as estimativas
-        estimates = pd.read_csv(os.path.join(tmpdir, "estimates.csv"), encoding="utf-8")
-
-        # Lê os índices com proteção
+        estimates = pd.read_csv(os.path.join(tmpdir, "estimates.csv"))
         indices_path = os.path.join(tmpdir, "indices.csv")
-        try:
-            indices_df = pd.read_csv(indices_path, encoding="utf-8")
+        if not os.path.exists(indices_path) or os.stat(indices_path).st_size == 0:
+            indices = None
+        else:
+            indices_df = pd.read_csv(indices_path)
             if "metric" in indices_df.columns and "value" in indices_df.columns:
                 indices = indices_df.set_index("metric")["value"].to_dict()
             else:
-                print(f"⚠️ Arquivo indices.csv malformado:\n{indices_df}")
-                indices = {}
-        except Exception as e:
-            print(f"❌ Erro ao ler indices.csv: {e}")
-            indices = {}
+                indices = None
 
-        # Lê o summary
         with open(os.path.join(tmpdir, "summary.txt"), encoding="utf-8") as f:
             summary = f.read()
 
