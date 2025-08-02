@@ -56,3 +56,13 @@ def run_lavaan_sem(model_desc, df, estimator="WLSMV", ordered_vars=None):
             "estimates": estimates,
             "summary": summary.splitlines()
         }
+
+def run_lavaan_cfa(factor_models: dict, df, estimator="WLSMV", ordered_vars=None):
+    import tempfile
+
+    model_lines = []
+    for factor_name, items in factor_models.items():
+        model_lines.append(f"{factor_name} =~ " + " + ".join(items))
+    model_desc = "\n".join(model_lines)
+
+    return run_lavaan_sem(model_desc, df, estimator=estimator, ordered_vars=ordered_vars)

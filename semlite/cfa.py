@@ -1,24 +1,17 @@
-from semopy import ModelMeans
-from semlite.utils import validar_csv, validar_variaveis, print_sucesso, carregar_arquivo_robusto
+from semlite.utils import validar_csv, carregar_arquivo_robusto, validar_variaveis, print_sucesso
+from semlite.r_helpers import run_lavaan_cfa
 
-def run_cfa(data_path, factor_name, indicators):
+def run_cfa(data_path, indicators, estimator="WLSMV", ordered_vars=None):
     try:
         validar_csv(data_path)
         df = carregar_arquivo_robusto(data_path)
-        validar_variaveis(df, indicators)
 
-        model_desc = f"{factor_name} =~ " + " + ".join(indicators)
+        todas_variaveis = [var for lista in indicators.values() for var in lista]
+        validar_variaveis(df, todas_variaveis)
 
-        model = ModelMeans(model_desc)
-        model.fit(df)
-
-        estimates = model.inspect(std_est=True)
+        result = run_lavaan_cfa(indicators, df, estimator, ordered_vars)
         print_sucesso("CFA")
-
-        return {
-            "model_description": model_desc,
-            "estimates": estimates
-        }
+        return result
 
     except Exception as e:
         print(f"❌ Erro ao rodar a CFA: {e}")
