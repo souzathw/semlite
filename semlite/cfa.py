@@ -1,4 +1,5 @@
 from semopy import ModelMeans
+from semopy.stats import calc_stats
 from semlite.utils import validar_csv, validar_variaveis, print_sucesso, carregar_arquivo_robusto
 
 def run_cfa(data_path, indicators):
@@ -16,7 +17,7 @@ def run_cfa(data_path, indicators):
         model.fit(df)
 
         estimates = model.inspect(std_est=True)
-        fit_indices = model.fit_statistics
+        fit_indices = calc_stats(model, df)
 
         print_sucesso("CFA")
         print("📊 Resultados prontos para análise.")
