@@ -10,7 +10,7 @@ sem <- import("semlite.mediation")
 
 
 caminho_arquivo <- file.choose()
-cat("📄 Arquivo selecionado:", caminho_arquivo, "\n")
+cat(" Arquivo selecionado:", caminho_arquivo, "\n")
 result <- sem$run_mediation(
   data_path = caminho_arquivo,
   iv = "SAUFAM",
@@ -23,19 +23,19 @@ result <- sem$run_mediation(
               "CULPA6", "CULPA7", "CULPA8", "CULPA9", "CULPA10")
   )
 )
-cat("\n📃 Modelo de Mediação construído:\n")
+cat("\n Modelo de Mediação construído:\n")
 cat(result$model_description, "\n\n")
-cat("📈 Índices de ajuste:\n")
+cat(" Índices de ajuste:\n")
 if (is.null(result$fit_indices)) {
-  cat("❌ Índices não encontrados. Verifique se o arquivo indices.csv foi gerado corretamente no lavaan_runner.R\n")
+  cat(" Índices não encontrados. Verifique se o arquivo indices.csv foi gerado corretamente no lavaan_runner.R\n")
 } else {
   cat("CFI: ", result$fit_indices[["cfi"]], "\n")
   cat("TLI: ", result$fit_indices[["tli"]], "\n")
   cat("RMSEA: ", result$fit_indices[["rmsea"]], "\n")
   cat("SRMR: ", result$fit_indices[["srmr"]], "\n")
 }
-cat("\n📊 Estimativas dos parâmetros (somente regressões):\n")
+cat("\n Estimativas dos parâmetros (somente regressões):\n")
 regs <- subset(result$estimates, op == "~")
 print(regs)
-cat("\n📄 Resumo do Lavaan:\n")
+cat("\n Resumo do Lavaan:\n")
 cat(result$summary, sep = "\n")
