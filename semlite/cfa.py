@@ -17,7 +17,7 @@ def run_cfa(data_path, indicators):
         model.fit(df)
 
         estimates = model.inspect(std_est=True)
-        fit_indices = calc_stats(model, df)
+        fit_indices = calc_stats(model)
 
         print_sucesso("CFA")
         print("📊 Resultados prontos para análise.")
