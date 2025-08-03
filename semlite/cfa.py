@@ -1,5 +1,4 @@
-from semopy import ModelMeans
-from semopy.inspect import inspect, model_fits
+from semopy import ModelMeans, inspect, model_fits
 from semlite.utils import validar_csv, validar_variaveis, print_sucesso, carregar_arquivo_robusto
 
 def run_cfa(data_path, indicators):
