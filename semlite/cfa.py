@@ -14,21 +14,36 @@ def run_cfa(data_path, indicators):
         model_desc = "\n".join(partes)
 
         model = ModelMeans(model_desc)
-        model.fit(df)
 
-        estimates = model.inspect(std_est=True)
-        stats = calc_stats(model)
+        try:
+            model.fit(df)
+        except Exception as e:
+            print(f"❌ Falha no ajuste do modelo: {e}")
+            return {
+                "model_description": model_desc,
+                "estimates": None,
+                "fit_indices": None
+            }
 
-        fit_indices = {
-            "Chi-Square": stats.get("chi2"),
-            "df": stats.get("DoF"),
-            "CFI": stats.get("CFI"),
-            "TLI": stats.get("TLI"),
-            "RMSEA": stats.get("RMSEA"),
-            "RMSEA_low": stats.get("RMSEA_low"),
-            "RMSEA_high": stats.get("RMSEA_high"),
-            "SRMR": stats.get("SRMR")  
-        }
+        try:
+            estimates = model.inspect(std_est=True)
+        except Exception:
+            estimates = None
+
+        try:
+            stats = calc_stats(model)
+            fit_indices = {
+                "Chi-Square": stats.get("chi2"),
+                "df": stats.get("DoF"),
+                "CFI": stats.get("CFI"),
+                "TLI": stats.get("TLI"),
+                "RMSEA": stats.get("RMSEA"),
+                "RMSEA_low": stats.get("RMSEA_low"),
+                "RMSEA_high": stats.get("RMSEA_high"),
+                "SRMR": stats.get("SRMR")
+            }
+        except Exception:
+            fit_indices = None
 
         print_sucesso("CFA")
         print("📊 Resultados prontos para análise.")
@@ -40,5 +55,5 @@ def run_cfa(data_path, indicators):
         }
 
     except Exception as e:
-        print(f"❌ Erro ao rodar a CFA: {e}")
+        print(f"❌ Erro geral ao rodar a CFA: {e}")
         return None
