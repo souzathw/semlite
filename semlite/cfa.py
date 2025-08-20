@@ -15,18 +15,19 @@ def run_cfa(data_path, indicators):
 
         model = ModelMeans(model_desc)
         model.fit(df)
+
         estimates = model.inspect(std_est=True)
         stats = calc_stats(model)
 
         fit_indices = {
-            "Chi-Square": stats["chi2"],
-            "df": stats["DoF"],
-            "CFI": stats["CFI"],
-            "TLI": stats["TLI"],
-            "RMSEA": stats["RMSEA"],
-            "RMSEA_low": stats.get("RMSEA_low", None),
-            "RMSEA_high": stats.get("RMSEA_high", None),
-            "SRMR": stats["SRMR"]
+            "Chi-Square": stats.get("chi2"),
+            "df": stats.get("DoF"),
+            "CFI": stats.get("CFI"),
+            "TLI": stats.get("TLI"),
+            "RMSEA": stats.get("RMSEA"),
+            "RMSEA_low": stats.get("RMSEA_low"),
+            "RMSEA_high": stats.get("RMSEA_high"),
+            "SRMR": stats.get("SRMR")  
         }
 
         print_sucesso("CFA")
