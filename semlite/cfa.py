@@ -1,7 +1,6 @@
 from semopy import ModelMeans
 from semopy.stats import calc_stats
 from semlite.utils import validar_csv, validar_variaveis, print_sucesso, carregar_arquivo_robusto
-import numpy as np
 
 def run_cfa(data_path, indicators):
     try:
@@ -10,22 +9,24 @@ def run_cfa(data_path, indicators):
 
         for lista in indicators.values():
             validar_variaveis(df, lista)
-        model_desc = "\n".join([f"{fator} =~ {' + '.join(itens)}" for fator, itens in indicators.items()])
+
+        partes = [f"{fator} =~ {' + '.join(itens)}" for fator, itens in indicators.items()]
+        model_desc = "\n".join(partes)
 
         model = ModelMeans(model_desc)
         model.fit(df)
-
         estimates = model.inspect(std_est=True)
         stats = calc_stats(model)
+
         fit_indices = {
-            "Chi-Square": stats.chi2,
-            "df": stats.df,
-            "CFI": stats.cfi,
-            "TLI": stats.tli,
-            "RMSEA": stats.rmsea,
-            "RMSEA_low": stats.rmsea_low,
-            "RMSEA_high": stats.rmsea_high,
-            "SRMR": stats.srmr
+            "Chi-Square": stats["chi2"],
+            "df": stats["DoF"],
+            "CFI": stats["CFI"],
+            "TLI": stats["TLI"],
+            "RMSEA": stats["RMSEA"],
+            "RMSEA_low": stats.get("RMSEA_low", None),
+            "RMSEA_high": stats.get("RMSEA_high", None),
+            "SRMR": stats["SRMR"]
         }
 
         print_sucesso("CFA")
